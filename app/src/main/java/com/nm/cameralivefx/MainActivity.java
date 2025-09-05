@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
 
     public native void nativeSetSurface(Surface surface);
     public static native void nativeSetJavaContext(MainActivity activity);
-//    public static native void nativeSetRotationDegrees(int degrees);
+    public static native void nativeSetRotationDegrees(int degrees);
 
 
     private SurfaceView surfaceView;
@@ -85,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
                 nativeSetSurface(holder.getSurface());
 
 
-//                nativeSetRotationDegrees(previewDegrees);
+                nativeSetRotationDegrees(previewDegrees);
 
                 if (cameraHandler == null) {
                     cameraHandler = new CameraHandler(MainActivity.this, holder.getSurface());

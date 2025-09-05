@@ -6,6 +6,9 @@
 #include <cstdint>
 #include <algorithm> // std::clamp
 
+// filters
+#include "filters/BlueArchitecture.hpp"
+
 #define TAG "CameraNative"
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__)
 
@@ -18,11 +21,16 @@ static ANativeWindow* gNativeWindow = nullptr;
 static jobject   gJavaActivity           = nullptr;
 static jmethodID gOnProcessedFrameMethod = nullptr; // void onProcessedFrameFromNative(byte[] nv21, long tsUs)
 
+// New global to store the rotation degrees from Java
+static int gPreviewDegrees = 0;
+
+
 // --------------------------------------------------
 // Helpers
 // --------------------------------------------------
 
-static inline void YUV420ToARGB_Pixel(
+
+static inline void YUV420ToRGB_Pixel(
         int Y, int U, int V,
         uint8_t& R, uint8_t& G, uint8_t& B)
 {
@@ -41,15 +49,15 @@ static inline void YUV420ToARGB_Pixel(
 }
 
 /**
- * Convert YUV420 (three planes, arbitrary row/pixel strides) to flat ARGB (A=255).
- * outARGB size must be width*height.
+ * Convert YUV420 (three planes, arbitrary row/pixel strides) to flat BGRA (A=255).
+ * outBGRA size must be width*height.
  */
-static void ConvertYUV420ToARGB(
+static void ConvertYUV420ToBGRA(
         const jbyte* yData, const jbyte* uData, const jbyte* vData,
         int yRowStride, int uRowStride, int vRowStride,
         int uPixelStride, int vPixelStride,
         int width, int height,
-        uint32_t* outARGB)
+        uint32_t* outBGRA)
 {
     for (int j = 0; j < height; ++j) {
         const int yRow = j * yRowStride;
@@ -67,9 +75,31 @@ static void ConvertYUV420ToARGB(
             const int V = (uint8_t) vData[vIdx];
 
             uint8_t R, G, B;
-            YUV420ToARGB_Pixel(Y, U, V, R, G, B);
+            YUV420ToRGB_Pixel(Y, U, V, R, G, B);
 
-            outARGB[j * width + i] = 0xFF000000u | (uint32_t(R) << 16) | (uint32_t(G) << 8) | uint32_t(B);
+            // Correct channel order for Android's Native Window (BGRA)
+            outBGRA[j * width + i] = 0xFF000000u | (uint32_t(B) << 16) | (uint32_t(G) << 8) | uint32_t(R);
+        }
+    }
+}
+
+/**
+ * Rotate an ARGB image by 90 degrees clockwise.
+ *
+ * @param src The source ARGB pixel data.
+ * @param dst The destination ARGB pixel data.
+ * @param width The width of the source image.
+ * @param height The height of the source image.
+ */
+static void RotateARGB90(
+        const uint32_t* src,
+        uint32_t* dst,
+        int width,
+        int height)
+{
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            dst[x * height + (height - 1 - y)] = src[y * width + x];
         }
     }
 }
@@ -121,6 +151,7 @@ static void ARGBtoNV21(const uint32_t* argb, uint8_t* nv21, int width, int heigh
     }
 }
 
+
 // --------------------------------------------------
 // JNI: Surface / Java context
 // --------------------------------------------------
@@ -155,6 +186,13 @@ Java_com_nm_cameralivefx_MainActivity_nativeSetJavaContext(
     LOGD("Java context set (callback cached=%s)", gOnProcessedFrameMethod ? "yes" : "no");
 }
 
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_nm_cameralivefx_MainActivity_nativeSetRotationDegrees(JNIEnv* env, jclass clazz, jint degrees) {
+    gPreviewDegrees = degrees;
+    LOGD("Preview rotation degrees set to %d", gPreviewDegrees);
+}
+
 // --------------------------------------------------
 // JNI: frame processing
 // --------------------------------------------------
@@ -175,30 +213,46 @@ Java_com_nm_cameralivefx_CameraHandler_processFrameYUV(
     jbyte* uData = env->GetByteArrayElements(uArray, nullptr);
     jbyte* vData = env->GetByteArrayElements(vArray, nullptr);
 
-    // ---- Convert YUV -> ARGB (no rotation) ----
-    const int outW = width;
-    const int outH = height;
-
-    std::vector<uint32_t> argb(outW * outH);
-    ConvertYUV420ToARGB(
+    // ---- Convert YUV -> BGRA for preview (no rotation) ----
+    std::vector<uint32_t> bgra(static_cast<size_t>(width) * height);
+    ConvertYUV420ToBGRA(
             yData, uData, vData,
             yRowStride, uRowStride, vRowStride,
             uPixelStride, vPixelStride,
-            outW, outH,
-            argb.data());
+            width, height,
+            bgra.data());
 
-    // ---- Preview: draw ARGB into native window ----
-    ANativeWindow_setBuffersGeometry(gNativeWindow, outW, outH, WINDOW_FORMAT_RGBA_8888);
+
+    // ---- Preview: apply rotation and draw into native window ----
+    std::vector<uint32_t> rotatedBgra;
+    int drawW = width;
+    int drawH = height;
+    const uint32_t* finalDrawData = bgra.data();
+
+    // Only rotate if the preview needs it
+    if (gPreviewDegrees == 90 || gPreviewDegrees == 270) {
+        // Swap dimensions for 90/270 degree rotations
+        drawW = height;
+        drawH = width;
+        rotatedBgra.resize(static_cast<size_t>(drawW) * drawH);
+
+        // Use a simple rotate function for 90 degrees clockwise
+        // This assumes gPreviewDegrees is always 90 for portrait mode
+        RotateARGB90(bgra.data(), rotatedBgra.data(), width, height);
+        finalDrawData = rotatedBgra.data();
+    }
+
+    ANativeWindow_setBuffersGeometry(gNativeWindow, drawW, drawH, WINDOW_FORMAT_RGBA_8888);
     ANativeWindow_Buffer buffer;
     if (ANativeWindow_lock(gNativeWindow, &buffer, nullptr) == 0) {
         // Copy line-by-line respecting buffer.stride
         uint32_t* dst = static_cast<uint32_t*>(buffer.bits);
         const int dstStride = buffer.stride; // in pixels
 
-        for (int j = 0; j < outH; ++j) {
+        for (int j = 0; j < drawH; ++j) {
             uint32_t* drow = dst + j * dstStride;
-            const uint32_t* srow = argb.data() + j * outW;
-            std::copy(srow, srow + outW, drow);
+            const uint32_t* srow = finalDrawData + static_cast<size_t>(j) * drawW;
+            std::copy(srow, srow + drawW, drow);
         }
 
         ANativeWindow_unlockAndPost(gNativeWindow);
@@ -206,14 +260,13 @@ Java_com_nm_cameralivefx_CameraHandler_processFrameYUV(
         LOGD("Failed to lock window");
     }
 
-    // ---- ARGB -> NV21 for encoder callback ----
-    const size_t yuvSize = static_cast<size_t>(outW) * static_cast<size_t>(outH) * 3 / 2;
+    // ---- YUV -> NV21 for encoder callback ----
+    const size_t yuvSize = static_cast<size_t>(width) * height * 3 / 2;
     std::vector<uint8_t> nv21(yuvSize, 0);
 
-    // Defensive logging (helps diagnose corruption)
-    // LOGD("NV21 convert: outW=%d outH=%d yuvSize=%zu argbSize=%zu", outW, outH, yuvSize, argb.size());
-
-    ARGBtoNV21(argb.data(), nv21.data(), outW, outH);
+    // Note: Use the original (un-rotated) BGRA data for encoding.
+    // The MediaMuxer's orientation hint will handle the rotation on playback.
+    ARGBtoNV21(bgra.data(), nv21.data(), width, height);
 
     // Send to Java if callback available
     if (gJavaActivity && gOnProcessedFrameMethod) {

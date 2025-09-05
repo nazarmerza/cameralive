@@ -5,13 +5,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/camera_bg"
-    android:orientation="horizontal"
-    tools:context="com.nm.cameralivefx.MainActivity"> <!-- Left Vertical Action Bar -->
-    <!-- Right Preview Area -->
+    android:orientation="vertical"
+    tools:context="com.nm.cameralivefx.MainActivity">
+
     <RelativeLayout
         android:id="@+id/preview_container"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
         android:layout_weight="1">
 
         <SurfaceView
@@ -27,7 +27,8 @@
             android:layout_marginTop="25dp"
             android:text=""
             android:textColor="@color/pink_primary"
-            android:textSize="16sp" /> <!-- Optional top-right overlay controls -->
+            android:textSize="16sp" />
+
         <RelativeLayout
             android:id="@+id/overlay_buttons_layout"
             android:layout_width="wrap_content"
@@ -75,42 +76,42 @@
                 style="@style/overly_textview"
                 android:layout_toRightOf="@id/divider3" />
         </RelativeLayout>
-
-        <LinearLayout
-            android:id="@+id/buttons_layout"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:padding="12dp">
-
-            <ImageView
-                android:id="@+id/video_thumbnail"
-                android:layout_width="70dp"
-                android:layout_height="70dp"
-                android:layout_margin="8dp"
-                android:background="@drawable/bg_thumbnail"
-                android:clickable="true"
-                android:scaleType="fitXY"
-                android:src="@color/blue_primary" />
-
-            <Button
-                android:id="@+id/recrod_btn"
-                style="@style/roundedButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:text="Record" />
-
-            <ImageView
-                android:id="@+id/video_photo_switch"
-                android:layout_width="70dp"
-                android:layout_height="70dp"
-                android:layout_margin="8dp"
-                android:background="@drawable/bg_video_photo_switch"
-                android:clickable="true"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_camera" />
-        </LinearLayout>
     </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/buttons_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="12dp">
+
+        <ImageView
+            android:id="@+id/video_thumbnail"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_margin="8dp"
+            android:background="@drawable/bg_thumbnail"
+            android:clickable="true"
+            android:scaleType="fitXY"
+            android:src="@color/blue_primary" />
+
+        <Button
+            android:id="@+id/recrod_btn"
+            style="@style/roundedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:text="Record" />
+
+        <ImageView
+            android:id="@+id/video_photo_switch"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_margin="8dp"
+            android:background="@drawable/bg_video_photo_switch"
+            android:clickable="true"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_camera" />
+    </LinearLayout>
 </LinearLayout>
