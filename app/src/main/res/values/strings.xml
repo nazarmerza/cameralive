@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Camera LiveFX</string>
+    <string name="mode_video">VIDEO</string>
+    <string name="mode_photo">PHOTO</string>
+    <string name="switch_camera">Switch Camera</string>
+    <string name="capture_or_record">Capture or Record</string>
+</resources>

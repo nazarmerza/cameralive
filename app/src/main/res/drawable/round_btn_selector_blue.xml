@@ -1,0 +1,43 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:drawable="@drawable/round_shape_red" android:state_selected="true">
+            
+    </item>
+    
+    <item android:state_pressed="true">
+        <layer-list>
+    
+        	   <item android:drawable="@drawable/shape_round_btn_red">
+        	       
+<!--         	       <shape android:shape="oval">
+ 					 <gradient 
+ 					    android:startColor="#ffe91e63"
+ 					    android:endColor="@color/pink_dark"
+ 					    android:type="radial"
+ 					    android:gradientRadius="150"
+ 					   />
+                    <stroke android:width="5dp" android:color="@color/pink_100" />
+                </shape> -->
+                
+        	       
+                </item>
+ 
+        
+        </layer-list>
+    </item>
+    <item><layer-list>
+        
+      
+        	   <item><shape android:shape="oval">
+ 				
+ 					<gradient 
+ 					    android:startColor="@color/blue_primary"
+ 					    android:endColor="@color/blue_primary"
+ 					    android:type="radial"
+ 					    android:gradientRadius="250"
+ 					    />
+                    <stroke android:width="5dp" android:color="@color/blue_100" />
+                </shape></item>
+             
+        </layer-list></item>
+</selector>

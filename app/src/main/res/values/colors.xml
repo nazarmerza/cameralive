@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- White-Blue Theme -->
+
+
+    <color name="indigo_primary">#ff3f51b5</color>
+    <color name="indigo_light1">#ffe8eaf6</color>
+    <color name="indigo_light2">#ffc5cae9</color>
+    <color name="indigo_dark">#ffc5cae9</color>
+
+
+
+    <!-- Blue hue -->
+    <color name="blue_primary">#ff5677fc</color>
+    <color name="blue_50">#ffe7e9fd</color>
+    <color name="blue_100">#ffd0d9ff</color>
+    <color name="blue_dark">#ff2a36b1</color>
+
+    <!-- Pink hue -->
+    <color name="pink_primary">#ffe91e63</color>
+    <color name="pink_50">#fffce4ec</color>
+    <color name="pink_100">#fff8bbd0</color>
+    <color name="pink_200">#fff48fb1</color>
+    <color name="pink_dark">#ff880e4f</color>
+
+    <color name="background_transparent">#40000000</color>
+
+
+
+    <!-- Mode toggle colors -->
+    <color name="white_80">#CCFFFFFF</color> <!-- 80% opaque white (active) -->
+    <color name="white_40">#66FFFFFF</color> <!-- 40% opaque white (inactive) -->
+
+    <color name="camera_bg">@color/white</color>
+    <color name="view_solid">@color/blue_primary</color>
+    <color name="view_stroke">@color/blue_100</color>
+    <color name="text_color">@color/blue_primary</color>
+    <color name="selected_stroke">@color/pink_primary</color>
+    <color name="selected_solid">@color/pink_primary</color>
+
+
+    <color name="background_holo_light">#fff3f3f3</color>
+    <color name="background_holo_dark">#ff303030</color>
+
+    <color name="ics_background_start">#ff020202</color>
+    <color name="ics_background_end">#ff272D33</color>
+    <color name="holo_dark1">#ff4C4C4C</color>
+    <color name="holo_dark2">#ff3C3C3D</color>
+    <color name="holo_dark3">#ff303030</color>
+
+    <color name="black_overlay">#66000000</color>
+    <color name="light_gray1">#F5F7FA</color>
+    <color name="light_gray2">#E6E9ED</color>
+    <color name="light_gray3">#E6E9ED</color>
+
+
+    <color name="red_bothered">#FF8D2036</color>
+    <color name="red_hot">#FFCE0A31</color>
+
+    <color name="background">#990033</color>
+    <color name="red1">#FC6E51</color>
+    <color name="red2">#e9573f</color>
+
+
+    <!-- green colors -->
+    <color name="mint1">#48CFAD</color>
+    <color name="mint2">#37BC9B</color>
+
+
+    <!-- colors by theme -->
+    <color name="holo_stroke">#ff222222</color>
+    <color name="border_pressed">#ff33b5e5</color>
+</resources>

@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        Base application theme, dependent on API level. This theme is replaced
+        by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
+    -->
+    <style name="AppBaseTheme" parent="android:Theme.Holo">
+        <!--
+            Theme customizations available in newer API levels can go in
+            res/values-vXX/styles.xml, while customizations related to
+            backward-compatibility can go here.
+        -->
+    </style>
+
+    <!-- Application theme. -->
+    <!-- All customizations that are NOT specific to a particular API-level can go here. -->
+    <style name="AppTheme" parent="AppBaseTheme">
+        <item name="android:textColor">@color/blue_primary</item>
+        
+ </style>
+
+<style name="PrefsTheme" parent="android:Theme.Holo.Light">
+
+    <item name="android:windowBackground">@color/white</item>
+    <item name="android:windowContentOverlay">@null</item>
+    <item name="android:textColor">@color/blue_primary</item>
+    <item name="android:actionBarStyle">@style/myThemeActionBar</item>
+       <item name="android:windowNoTitle">false</item>
+   <item name="android:windowFullscreen">true</item>
+   
+        <!--
+        <item name="android:height">100dp</item>
+      <item name="android:listViewStyle">@style/listViewPrefs</item> --> 
+</style>
+
+<style name="myThemeActionBar" parent="@android:style/Widget.Holo.Light.ActionBar">
+    <item name="android:background">@color/blue_primary</item>
+    <item name="android:titleTextStyle">@style/myThemeActionBarText</item>
+    <item name="android:height">70dp</item>
+
+    
+</style>
+
+   <!-- ActionBar title text -->
+<style name="myThemeActionBarText" parent="@android:style/TextAppearance">
+    <item name="android:textColor">@color/white</item>
+    <item name="android:textSize">30sp</item>
+    
+</style>
+
+<style name="listViewPrefs" parent="@android:style/Widget.ListView">
+    <item name="android:background">@color/white</item>
+    <item name="android:cacheColorHint">@color/white</item>
+</style> 
+
+    <style name="DialogFragmentTheme" parent="android:Theme.Holo.Light.Dialog"></style>
+
+    <style name="FullscreenTheme" parent="android:Theme.NoTitleBar">
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowBackground">@null</item>
+        <item name="metaButtonBarStyle">@style/ButtonBar</item>
+        <item name="metaButtonBarButtonStyle">@style/ButtonBarButton</item>
+    </style>
+
+    <style name="ListviewThumb">
+        <item name="android:width">50dp</item>
+        <item name="android:height">50dp</item>
+    </style>
+
+    <style name="ButtonBar">
+        <item name="android:paddingLeft">2dp</item>
+        <item name="android:paddingTop">5dp</item>
+        <item name="android:paddingRight">2dp</item>
+        <item name="android:paddingBottom">0dp</item>
+        <item name="android:background">@android:drawable/bottom_bar</item>
+    </style>
+
+    <style name="ButtonBarButton" />
+
+<!--     <style name="roundedButtonHolo" parent="@android:style/Widget.Button">
+        <item name="android:width">70dp</item>
+        <item name="android:height">70dp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/red1</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@drawable/btn_round_ics_dark</item>
+    </style> -->
+
+    <style name="roundedButton" parent="@android:style/Widget.Button">
+        <item name="android:width">120dp</item>
+        <item name="android:height">120dp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/red1</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@drawable/round_btn_selector_green</item>
+    </style>
+
+<!--     <style name="flatButtonRed" parent="@android:style/Widget.Button">
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@drawable/flat_btn_red</item>
+        <item name="android:padding">10dip</item>
+        <item name="android:layout_marginTop">1dip</item>
+        <item name="android:layout_marginRight">1dip</item>
+        <item name="android:layout_marginBottom">1dip</item>
+        <item name="android:layout_marginLeft">1dip</item>
+    </style> -->
+
+    <!-- overlay views -->
+    <style name="divider">
+        <item name="android:layout_width">1dp</item>
+        <item name="android:layout_height">20dp</item>
+        <item name="android:layout_centerVertical">true</item>
+        <item name="android:background">@color/light_gray1</item>
+        
+    </style>
+
+    <style name="overly_textview">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textColor">@color/light_gray1</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:layout_centerVertical">true</item>
+        <item name="android:gravity">center</item>
+        <item name="android:clickable">true</item>
+        <item name="android:text">T</item>
+        <item name="android:padding">20dp</item>
+        <item name="android:lineSpacingMultiplier">0.8</item>
+      
+    </style>
+
+    
+    <!-- Listview -->
+    <style name="listview_item_image">
+        <item name="android:layout_width">80dp</item>
+        <item name="android:layout_height">80dp</item>
+ 		<item name="android:layout_alignParentTop">true</item>
+        <item name="android:layout_centerHorizontal">true</item>
+        <item name="android:background">@drawable/bg_listview_item</item>
+        <item name="android:src">@drawable/filter_blue1</item>
+        <item name="android:scaleType">fitXY</item>
+    </style>
+
+        
+    <style name="listview_item_text">
+        <item name="android:layout_width">76dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_centerHorizontal">true</item>
+        <item name="android:layout_margin">2dp</item>
+        <item name="android:textSize">10sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/blue_primary</item>
+        <item name="android:gravity">center</item>
+        <item name="android:text"></item>
+        <item name="android:background">@color/white</item>
+        
+        
+    </style>
+
+</resources>
