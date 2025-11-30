@@ -35,6 +35,9 @@
 
 
 
+    <color name="dark_gray">#AAAAAA</color>
+    <color name="material_red_700">#D32F2F</color>
+
     <!-- Mode toggle colors -->
     <color name="white_80">#CCFFFFFF</color> <!-- 80% opaque white (active) -->
     <color name="white_40">#66FFFFFF</color> <!-- 40% opaque white (inactive) -->

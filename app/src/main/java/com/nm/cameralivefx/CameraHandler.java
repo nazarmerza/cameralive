@@ -32,21 +32,25 @@ public class CameraHandler {
 
     private static final String TAG = CameraHandler.class.getSimpleName();
 
+    public static final String FRONT_CAMERA_ID = "1";
+    public static final String BACK_CAMERA_ID = "0";
+
     private Size chosenSize;
-    private static final int MAX_W = 960;    // cap resolution to speed up processing
-    private static final int MAX_H = 540;    // choose a 16:9-ish cap; adjust if you prefer 4:3
+    private static final int MAX_W = 960;
+    private static final int MAX_H = 540;
     private static final double TARGET_ASPECT = 16.0 / 9.0;
     private static final double ASPECT_TOL = 0.05;
 
-    private final Context context;
+    private final MainActivity mActivity; // Changed from Context to MainActivity
     private final Surface previewSurface; // only used by native to draw; not fed to camera
     private CameraDevice cameraDevice;
     private CameraCaptureSession captureSession;
     private ImageReader imageReader;
     private Handler backgroundHandler;
 
-    public CameraHandler(Context context, Surface surface) {
-        this.context = context;
+    // 1. UPDATED CONSTRUCTOR to take MainActivity reference
+    public CameraHandler(MainActivity activity, Surface surface) {
+        this.mActivity = activity;
         this.previewSurface = surface;
 
         HandlerThread backgroundThread = new HandlerThread("CameraThread");
@@ -55,16 +59,21 @@ public class CameraHandler {
     }
 
     @SuppressLint("MissingPermission")
-    public void startCamera() {
-        CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+    public void startCamera(String cameraId) {
+        CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE); // Use mActivity to get service
         try {
-            String cameraId = manager.getCameraIdList()[0];
-            CameraCharacteristics cc = manager.getCameraCharacteristics(cameraId);
+            String cameraIdToOpen = cameraId;
+            CameraCharacteristics cc = manager.getCameraCharacteristics(cameraIdToOpen);
             StreamConfigurationMap map = cc.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             Size[] choices = map.getOutputSizes(ImageFormat.YUV_420_888);
 
             chosenSize = chooseOptimalYuvSize(choices, MAX_W, MAX_H, TARGET_ASPECT);
             Log.d(TAG, "Chosen YUV size: " + chosenSize.getWidth() + "x" + chosenSize.getHeight());
+
+            // 2. IMPORTANT FIX: Pass the chosen frame size to MainActivity
+            // The photo capture happens on this same stream, so these are the dimensions
+            // that the C++ code uses when it captures and returns the BGRA buffer.
+            mActivity.setPhotoCaptureSize(chosenSize.getWidth(), chosenSize.getHeight());
 
             // Use a slightly deeper queue to reduce “Failed to lock window” bursts under load
             imageReader = ImageReader.newInstance(chosenSize.getWidth(), chosenSize.getHeight(),
@@ -73,7 +82,7 @@ public class CameraHandler {
             imageReader.setOnImageAvailableListener(reader -> {
                 Image image = reader.acquireLatestImage();
                 if (image != null) {
-                    Log.d(TAG, "Frame received: " + image.getWidth() + "x" + image.getHeight());
+                    // ... (Frame processing logic remains the same) ...
 
                     Image.Plane[] planes = image.getPlanes();
 
@@ -109,12 +118,14 @@ public class CameraHandler {
                 }
             }, backgroundHandler);
 
-            manager.openCamera(cameraId, new CameraDevice.StateCallback() {
+            manager.openCamera(cameraIdToOpen, new CameraDevice.StateCallback() {
                 @Override public void onOpened(CameraDevice camera) {
                     cameraDevice = camera;
 
                     try {
                         // Single-output session (only ImageReader) to keep camera path light.
+                        // NOTE: previewSurface is not used as a target for the capture session,
+                        // it's only provided to the native layer to draw the processed frame.
                         camera.createCaptureSession(
                                 Collections.singletonList(imageReader.getSurface()),
                                 new CameraCaptureSession.StateCallback() {
@@ -155,6 +166,8 @@ public class CameraHandler {
             e.printStackTrace();
         }
     }
+
+    // ... (rest of the methods remain the same) ...
 
     public Size getChosenSize() {
         return chosenSize;

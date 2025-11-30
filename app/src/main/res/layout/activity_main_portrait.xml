@@ -1,106 +1,144 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Root layout for the main camera activity, using ConstraintLayout for flexible positioning. -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/camera_activity"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/camera_bg"
-    android:orientation="vertical"
-    tools:context="com.nm.cameralivefx.MainActivity">
+    android:background="#121212"
+    tools:context=".MainActivity">
 
-    <!-- Preview Container -->
-    <RelativeLayout
-        android:id="@+id/preview_container"
-        android:layout_width="match_parent"
+    <!-- The camera preview. Must be a SurfaceView to render the camera feed. -->
+    <SurfaceView
+        android:id="@+id/camera_preview"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-        <SurfaceView
-            android:id="@+id/surfaceView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginTop="48dp" />
-
-        <TextView
-            android:id="@+id/timer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="25dp"
-            android:layout_marginLeft="10dp"
-            android:text=""
-            android:textColor="@color/pink_primary"
-            android:textSize="16sp" />
-
-        <!-- Optional top-right overlay controls -->
-        <RelativeLayout
-            android:id="@+id/overlay_buttons_layout"
-            android:layout_width="wrap_content"
-            android:layout_height="80dp"
-            android:layout_alignParentRight="true"
-            android:layout_marginTop="0dp"
-            android:orientation="horizontal">
-
-            <ImageButton
-                android:id="@+id/prefs"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="16dp"
-                android:padding="20dp"
-                android:background="@null"
-                android:src="@drawable/ic_settings" />
-
-            <View android:id="@+id/divider1" style="@style/divider" android:layout_toRightOf="@id/prefs" />
-
-            <TextView android:id="@+id/resolution_text" android:layout_toRightOf="@id/divider1" style="@style/overly_textview" />
-
-            <View android:id="@+id/divider2" style="@style/divider" android:layout_toRightOf="@id/resolution_text" />
-
-            <TextView android:id="@+id/exposure" android:layout_toRightOf="@id/divider2" style="@style/overly_textview" />
-
-            <View android:id="@+id/divider3" style="@style/divider" android:layout_toRightOf="@id/exposure" />
-
-            <TextView android:id="@+id/white_balance" android:layout_toRightOf="@id/divider3" style="@style/overly_textview" />
-
-        </RelativeLayout>
-
-    </RelativeLayout>
-
-    <!-- Bottom Action Bar -->
+    <!-- Action Bar: Expanded for filter selection and other controls. -->
     <LinearLayout
-        android:id="@+id/buttons_layout"
-        android:layout_width="match_parent"
+        android:id="@+id/action_bar"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:padding="12dp">
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="#1E1E1E"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" >
 
-        <ImageView
-            android:id="@+id/video_thumbnail"
-            android:layout_width="70dp"
-            android:layout_height="70dp"
-            android:layout_margin="8dp"
-            android:background="@drawable/bg_thumbnail"
-            android:clickable="true"
-            android:scaleType="fitXY"
-            android:src="@color/blue_primary" />
+        <!-- Horizontal scrollable list for filter thumbnails. -->
+        <HorizontalScrollView
+            android:id="@+id/filter_scroll_view"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:layout_marginTop="8dp"
+            android:scrollbarThumbHorizontal="@android:color/transparent">
 
-        <Button
-            android:id="@+id/recrod_btn"
-            style="@style/roundedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            android:text="Record" />
+            <LinearLayout
+                android:id="@+id/filter_list_container"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp">
 
-        <ImageView
-            android:id="@+id/video_photo_switch"
-            android:layout_width="70dp"
-            android:layout_height="70dp"
-            android:layout_margin="8dp"
-            android:background="@drawable/bg_video_photo_switch"
-            android:clickable="true"
-            android:scaleType="fitCenter"
-            android:src="@drawable/ic_camera" />
+                <!-- The filter thumbnails will be added here programmatically. -->
+
+            </LinearLayout>
+
+        </HorizontalScrollView>
+
     </LinearLayout>
 
-</LinearLayout>
+    <!-- UI Controls at the bottom. -->
+    <LinearLayout
+        android:id="@+id/control_bar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- PHOTO/VIDEO mode selection. -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp">
+
+            <Button
+                android:id="@+id/photo_mode_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PHOTO"
+                android:textColor="#FFFFFF"
+                android:background="@android:color/transparent"
+                android:textStyle="bold"/>
+
+            <Button
+                android:id="@+id/video_mode_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="VIDEO"
+                android:textColor="#AAAAAA"
+                android:background="@android:color/transparent"
+                android:textStyle="bold"
+                android:layout_marginStart="16dp"/>
+        </LinearLayout>
+
+        <!-- Main control buttons row. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="8dp">
+
+            <!-- Thumbnail button for last photo/video. -->
+            <ImageView
+                android:id="@+id/thumbnail_button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/rounded_button"
+                android:scaleType="centerCrop"
+                android:layout_weight="1"
+                android:padding="4dp"
+                android:contentDescription="View last captured media"/>
+
+            <!-- Capture/Record button. This view will change based on PHOTO/VIDEO mode. -->
+            <ImageView
+                android:id="@+id/capture_button"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:src="@drawable/ic_camera_photo_capture"
+                android:scaleType="fitCenter"
+                android:layout_gravity="center_horizontal"
+                android:contentDescription="Capture or record"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"/>
+
+            <!-- Camera switch button. -->
+            <ImageView
+                android:id="@+id/camera_switch_button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:src="@drawable/ic_camera_switch"
+                android:background="@drawable/rounded_button"
+                android:padding="8dp"
+                android:contentDescription="Switch between front and back cameras"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

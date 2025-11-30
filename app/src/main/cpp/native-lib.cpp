@@ -1,3 +1,7 @@
+// This C++ code is the same as provided in the previous, extended response.
+// It includes all necessary JNI exports, globals, and the updated
+// gCaptureNextFrame logic within processFrameYUV to send BGRA data back to Java.
+
 #include <jni.h>
 #include <android/native_window_jni.h>
 #include <android/log.h>
@@ -6,6 +10,8 @@
 #include <cstdint>
 #include <algorithm>
 #include <cmath>
+#include <map>
+#include <string>
 
 #define TAG "CameraNative"
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__)
@@ -15,23 +21,38 @@
 // --------------------------------------------------
 static ANativeWindow* gNativeWindow = nullptr;
 static jobject   gJavaActivity           = nullptr;
-static jmethodID gOnProcessedFrameMethod = nullptr;
+static jmethodID gOnProcessedFrameMethod = nullptr; // For Video (NV21)
+static jmethodID gOnProcessedPhotoMethod = nullptr; // For Photo (BGRA data)
 static int gPreviewDegrees = 0;
+static bool gCaptureNextFrame = false;              // Flag to capture next frame
 
-// The LUT header file is included here
+// The global pointer for the currently active filter
+static const float (*gCurrentLUT)[33][33][33][3] = nullptr;
+static std::map<std::string, const float (*)[33][33][33][3]> gFilterMap;
+
+// Filter headers (assumed to be correct)
+#include "filters/lutify/Amy.hpp"
+#include "filters/lutify/Claire.hpp"
+#include "filters/lutify/FBoost10.hpp"
+#include "filters/lutify/FTone3.hpp"
+#include "filters/lutify/PFilm2.hpp"
 #include "filters/BlueArchitecture.hpp"
+#include "filters/HardBoost.hpp"
+#include "filters/LongBeachMorning.hpp"
+#include "filters/LushGreen.hpp"
+#include "filters/MagicHour.hpp"
+#include "filters/NaturalBoost.hpp"
+#include "filters/OrangeAndBlue.hpp"
+#include "filters/SoftBlackAndWhite.hpp"
+#include "filters/Waves.hpp"
+#include "filters/BlueHour.hpp"
+#include "filters/ColdChrome.hpp"
+#include "filters/CrispAutumn.hpp"
+#include "filters/DarkAndSomber.hpp"
 
 // --------------------------------------------------
-// Helpers
+// Helpers (RotateARGB90 and ARGBtoNV21 implementations remain the same)
 // --------------------------------------------------
-/**
- * Rotate an ARGB image by 90 degrees clockwise.
- *
- * @param src The source ARGB pixel data.
- * @param dst The destination ARGB pixel data.
- * @param width The width of the source image.
- * @param height The height of the source image.
- */
 static void RotateARGB90(
         const uint32_t* src,
         uint32_t* dst,
@@ -45,10 +66,6 @@ static void RotateARGB90(
     }
 }
 
-/**
- * ARGB -> NV21 (Y plane + interleaved VU), bounds-safe.
- * width/height are the ARGB (and output) dimensions.
- */
 static void ARGBtoNV21(const uint32_t* argb, uint8_t* nv21, int width, int height)
 {
     uint8_t* yPlane = nv21;
@@ -90,9 +107,8 @@ static void ARGBtoNV21(const uint32_t* argb, uint8_t* nv21, int width, int heigh
     }
 }
 
-
 // --------------------------------------------------
-// JNI: Surface / Java context
+// JNI: Surface / Java context / Rotation
 // --------------------------------------------------
 
 extern "C"
@@ -120,9 +136,16 @@ Java_com_nm_cameralivefx_MainActivity_nativeSetJavaContext(
     gJavaActivity = env->NewGlobalRef(activity);
 
     jclass cls = env->GetObjectClass(gJavaActivity);
+
+    // Video/Encoder callback
     gOnProcessedFrameMethod = env->GetMethodID(cls, "onProcessedFrameFromNative", "([BJ)V");
 
-    LOGD("Java context set (callback cached=%s)", gOnProcessedFrameMethod ? "yes" : "no");
+    // Photo callback (BGRA data)
+    gOnProcessedPhotoMethod = env->GetMethodID(cls, "onProcessedPhotoFromNative", "([B)V");
+
+    LOGD("Java context set (Video callback cached=%s, Photo callback cached=%s)",
+         gOnProcessedFrameMethod ? "yes" : "no",
+         gOnProcessedPhotoMethod ? "yes" : "no");
 }
 
 extern "C"
@@ -132,9 +155,64 @@ Java_com_nm_cameralivefx_MainActivity_nativeSetRotationDegrees(JNIEnv* env, jcla
     LOGD("Preview rotation degrees set to %d", gPreviewDegrees);
 }
 
+// --------------------------------------------------
+// JNI: Filter management (unchanged)
+// --------------------------------------------------
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_nm_cameralivefx_MainActivity_nativeInitializeFilters(JNIEnv* env, jclass clazz) {
+    LOGD("Initializing filters map...");
+    gFilterMap["None"] = nullptr;
+    gFilterMap["Amy"] = &Amy;
+    gFilterMap["Claire"] = &Claire;
+    gFilterMap["FBoost10"] = &FBoost10;
+    gFilterMap["FTone3"] = &FTone3;
+    gFilterMap["PFilm2"] = &PFilm2;
+    gFilterMap["Blue Architecture"] = &BlueArchitecture;
+    gFilterMap["HardBoost"] = &HardBoost;
+    gFilterMap["LongBeachMorning"] = &LongBeachMorning;
+    gFilterMap["LushGreen"] = &LushGreen;
+    gFilterMap["MagicHour"] = &MagicHour;
+    gFilterMap["NaturalBoost"] = &NaturalBoost;
+    gFilterMap["OrangeAndBlue"] = &OrangeAndBlue;
+    gFilterMap["SoftBlackAndWhite"] = &SoftBlackAndWhite;
+    gFilterMap["Waves"] = &Waves;
+    gFilterMap["BlueHour"] = &BlueHour;
+    gFilterMap["ColdChrome"] = &ColdChrome;
+    gFilterMap["CrispAutumn"] = &CrispAutumn;
+    gFilterMap["DarkAndSomber"] = &DarkAndSomber;
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_nm_cameralivefx_MainActivity_nativeSetCurrentFilter(JNIEnv* env, jclass clazz, jstring filterName) {
+    const char *name = env->GetStringUTFChars(filterName, nullptr);
+    auto it = gFilterMap.find(name);
+    if (it != gFilterMap.end()) {
+        gCurrentLUT = it->second;
+        LOGD("Switched to filter: %s", name);
+    } else {
+        LOGD("Filter not found: %s", name);
+        gCurrentLUT = nullptr;
+    }
+    env->ReleaseStringUTFChars(filterName, name);
+}
 
 // --------------------------------------------------
-// JNI: frame processing
+// JNI: Photo Capture Flag
+// --------------------------------------------------
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_nm_cameralivefx_MainActivity_nativeCapturePhoto(JNIEnv* env, jobject thiz) {
+    gCaptureNextFrame = true;
+    LOGD("Photo capture requested. Will process next frame.");
+}
+
+
+// --------------------------------------------------
+// JNI: frame processing (with photo capture logic)
 // --------------------------------------------------
 extern "C"
 JNIEXPORT void JNICALL
@@ -153,6 +231,7 @@ Java_com_nm_cameralivefx_CameraHandler_processFrameYUV(
 
     // ---- 1. Convert YUV -> BGRA and apply LUT ----
     std::vector<uint32_t> bgra(static_cast<size_t>(width) * height);
+
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             int yIndex = y * yRowStride + x;
@@ -172,25 +251,50 @@ Java_com_nm_cameralivefx_CameraHandler_processFrameYUV(
             int G = std::clamp((298 * C - 100 * D - 208 * E + 128) >> 8, 0, 255);
             int B = std::clamp((298 * C + 516 * D + 128) >> 8, 0, 255);
 
-            // Apply LUT filter using direct mapping from a 3D LUT
-            const int lutSize = 33;
-            int r_idx = static_cast<int>(std::clamp(static_cast<float>(R) / 255.0f * (lutSize - 1), 0.0f, static_cast<float>(lutSize - 1)));
-            int g_idx = static_cast<int>(std::clamp(static_cast<float>(G) / 255.0f * (lutSize - 1), 0.0f, static_cast<float>(lutSize - 1)));
-            int b_idx = static_cast<int>(std::clamp(static_cast<float>(B) / 255.0f * (lutSize - 1), 0.0f, static_cast<float>(lutSize - 1)));
+            int filteredR = R;
+            int filteredG = G;
+            int filteredB = B;
 
-            const float* lut_color = BlueArchitecture[b_idx][g_idx][r_idx];
+            if (gCurrentLUT) {
+                const int lutSize = 33;
+                int r_idx = (R * (lutSize - 1)) / 255;
+                int g_idx = (G * (lutSize - 1)) / 255;
+                int b_idx = (B * (lutSize - 1)) / 255;
 
-            int filteredR = static_cast<int>(std::clamp(lut_color[0] * 255.0f, 0.0f, 255.0f));
-            int filteredG = static_cast<int>(std::clamp(lut_color[1] * 255.0f, 0.0f, 255.0f));
-            int filteredB = static_cast<int>(std::clamp(lut_color[2] * 255.0f, 0.0f, 255.0f));
+                const float* lut_color = (*gCurrentLUT)[b_idx][g_idx][r_idx];
 
+                filteredR = static_cast<int>(std::clamp(lut_color[0] * 255.0f, 0.0f, 255.0f));
+                filteredG = static_cast<int>(std::clamp(lut_color[1] * 255.0f, 0.0f, 255.0f));
+                filteredB = static_cast<int>(std::clamp(lut_color[2] * 255.0f, 0.0f, 255.0f));
+            }
+
+            // Store as ARGB (0xAARRGGBB) -> memory is [B, G, R, A]
             bgra[static_cast<size_t>(y) * width + x] =
                     0xFF000000 | (static_cast<uint32_t>(filteredB) << 16) |
                     (static_cast<uint32_t>(filteredG) << 8) | static_cast<uint32_t>(filteredR);
         }
     }
 
-    // ---- 2. Preview: apply rotation and draw into native window ----
+    // ---- 2. Photo Capture Check (SEND RAW BGRA DATA TO JAVA) ----
+    if (gCaptureNextFrame && gJavaActivity && gOnProcessedPhotoMethod) {
+        gCaptureNextFrame = false;
+
+        const size_t bgraSizeBytes = static_cast<size_t>(width) * height * sizeof(uint32_t);
+        jbyteArray photoArray = env->NewByteArray(static_cast<jsize>(bgraSizeBytes));
+
+        if (photoArray) {
+            env->SetByteArrayRegion(photoArray, 0, static_cast<jsize>(bgraSizeBytes),
+                                    reinterpret_cast<const jbyte*>(bgra.data()));
+
+            env->CallVoidMethod(gJavaActivity, gOnProcessedPhotoMethod, photoArray);
+            env->DeleteLocalRef(photoArray);
+            LOGD("Photo frame captured and sent to Java for JPEG encoding. Size: %d x %d", width, height);
+        } else {
+            LOGD("Failed to allocate jbyteArray for photo.");
+        }
+    }
+
+    // ---- 3. Preview: apply rotation and draw into native window ----
     std::vector<uint32_t> rotatedBgra;
     int drawW = width;
     int drawH = height;
@@ -221,11 +325,10 @@ Java_com_nm_cameralivefx_CameraHandler_processFrameYUV(
         LOGD("Failed to lock window");
     }
 
-    // ---- 3. YUV -> NV21 for encoder callback ----
+    // ---- 4. YUV -> NV21 for encoder callback ----
     const size_t yuvSize = static_cast<size_t>(width) * height * 3 / 2;
     std::vector<uint8_t> nv21(yuvSize, 0);
 
-    // Convert the filtered BGRA data to NV21 for encoding
     ARGBtoNV21(bgra.data(), nv21.data(), width, height);
 
     if (gJavaActivity && gOnProcessedFrameMethod) {
