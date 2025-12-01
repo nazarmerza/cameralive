@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace = "com.nm.cameralivefx"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.nm.cameralivefx"
@@ -38,6 +38,15 @@ android {
     buildFeatures {
         viewBinding = true
     }
+
+    packagingOptions {
+        jniLibs {
+            // Don’t use legacy extraction; keep libs inside APK splits uncompressed
+            useLegacyPackaging = false
+        }
+    }
+
+    ndkVersion = "29.0.14206865"
 }
 
 dependencies {

@@ -11,6 +11,7 @@
 
     <!--        android:theme="@style/Theme.CameraLiveFX"-->
     <application
+        android:extractNativeLibs="false"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
