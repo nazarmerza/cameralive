@@ -66,6 +66,38 @@ static void RotateARGB90(
     }
 }
 
+/**
+ * Rotate an ARGB image by 180 degrees.
+ */
+static void RotateARGB180(
+        const uint32_t* src,
+        uint32_t* dst,
+        int width,
+        int height)
+{
+    const int total = width * height;
+    for (int i = 0; i < total; ++i) {
+        dst[total - 1 - i] = src[i];
+    }
+}
+
+/**
+ * Rotate an ARGB image by 270 degrees clockwise.
+ */
+static void RotateARGB270(
+        const uint32_t* src,
+        uint32_t* dst,
+        int width,
+        int height)
+{
+    // 270° CW == 90° CCW
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            dst[(width - 1 - x) * height + y] = src[y * width + x];
+        }
+    }
+}
+
 static void ARGBtoNV21(const uint32_t* argb, uint8_t* nv21, int width, int height)
 {
     uint8_t* yPlane = nv21;
@@ -295,18 +327,33 @@ Java_com_nm_cameralivefx_CameraHandler_processFrameYUV(
     }
 
     // ---- 3. Preview: apply rotation and draw into native window ----
+// ---- Preview: apply rotation and draw into native window ----
     std::vector<uint32_t> rotatedBgra;
     int drawW = width;
     int drawH = height;
     const uint32_t* finalDrawData = bgra.data();
 
-    if (gPreviewDegrees == 90 || gPreviewDegrees == 270) {
+    if (gPreviewDegrees == 90) {
         drawW = height;
         drawH = width;
         rotatedBgra.resize(static_cast<size_t>(drawW) * drawH);
         RotateARGB90(bgra.data(), rotatedBgra.data(), width, height);
         finalDrawData = rotatedBgra.data();
+    } else if (gPreviewDegrees == 180) {
+        drawW = width;
+        drawH = height;
+        rotatedBgra.resize(static_cast<size_t>(drawW) * drawH);
+        RotateARGB180(bgra.data(), rotatedBgra.data(), width, height);
+        finalDrawData = rotatedBgra.data();
+    } else if (gPreviewDegrees == 270) {
+        drawW = height;
+        drawH = width;
+        rotatedBgra.resize(static_cast<size_t>(drawW) * drawH);
+        RotateARGB270(bgra.data(), rotatedBgra.data(), width, height);
+        finalDrawData = rotatedBgra.data();
     }
+// else 0°: use bgra as-is
+
 
     ANativeWindow_setBuffersGeometry(gNativeWindow, drawW, drawH, WINDOW_FORMAT_RGBA_8888);
     ANativeWindow_Buffer buffer;
